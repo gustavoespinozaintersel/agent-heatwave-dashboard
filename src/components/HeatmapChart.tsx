@@ -10,7 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from '@/lib/utils';
+import LoadingState from './heatmap/LoadingState';
+import ColorLegend from './heatmap/ColorLegend';
+import HeatmapCell from './heatmap/HeatmapCell';
 
 interface HeatmapChartProps {
   data: HeatmapData;
@@ -18,21 +20,6 @@ interface HeatmapChartProps {
   groupBy: GroupByType;
   palette: ColorPalette;
 }
-
-const getColorScheme = (palette: ColorPalette) => {
-  switch (palette) {
-    case 'purple':
-      return ['bg-purple-50', 'bg-purple-100', 'bg-purple-200', 'bg-purple-300', 'bg-purple-400', 'bg-purple-500'];
-    case 'blue':
-      return ['bg-blue-50', 'bg-blue-100', 'bg-blue-200', 'bg-blue-300', 'bg-blue-400', 'bg-blue-500'];
-    case 'red':
-      return ['bg-red-50', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'];
-    case 'green':
-      return ['bg-green-50', 'bg-green-100', 'bg-green-200', 'bg-green-300', 'bg-green-400', 'bg-green-500'];
-    default:
-      return ['bg-purple-50', 'bg-purple-100', 'bg-purple-200', 'bg-purple-300', 'bg-purple-400', 'bg-purple-500'];
-  }
-};
 
 const HeatmapChart: React.FC<HeatmapChartProps> = ({ 
   data, 
@@ -45,13 +32,6 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
     return Math.max(...data.data.map(d => d.count));
   }, [data.data]);
 
-  const getColorIntensity = (count: number) => {
-    if (count === 0) return 'bg-gray-50 dark:bg-gray-900';
-    const colors = getColorScheme(palette);
-    const intensity = Math.min(Math.floor((count / maxCount) * (colors.length - 1)), colors.length - 1);
-    return colors[intensity];
-  };
-
   const findDataPoint = (agent: string, label: string) => {
     return data.data.find(d => d.agent === agent && (
       groupBy === 'weekday' ? d.day === label : d.date === label
@@ -59,18 +39,7 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Loading heatmap data...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-96 flex items-center justify-center">
-            <div className="animate-pulse text-gray-400">Loading data...</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <LoadingState />;
   }
 
   return (
@@ -111,20 +80,12 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
                     
                     return (
                       <TableCell key={`${agent}-${label}`} className="p-0">
-                        <div 
-                          className={cn(
-                            "m-1 h-10 rounded flex items-center justify-center heatmap-cell",
-                            getColorIntensity(count)
-                          )}
-                          title={`${agent}: ${count} messages on ${groupBy === 'weekday' ? label : new Date(label).toLocaleDateString()}`}
-                        >
-                          <span className={cn(
-                            "font-medium",
-                            count > maxCount * 0.6 ? "text-white" : "text-gray-800"
-                          )}>
-                            {count}
-                          </span>
-                        </div>
+                        <HeatmapCell
+                          count={count}
+                          maxCount={maxCount}
+                          palette={palette}
+                          tooltipText={`${agent}: ${count} messages on ${groupBy === 'weekday' ? label : new Date(label).toLocaleDateString()}`}
+                        />
                       </TableCell>
                     );
                   })}
@@ -134,20 +95,7 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
           </Table>
         </div>
         
-        <div className="mt-6 flex items-center justify-center">
-          <div className="flex space-x-2">
-            {getColorScheme(palette).map((color, index) => (
-              <div key={color} className="flex items-center space-x-1">
-                <div className={`w-4 h-4 rounded ${color}`}></div>
-                <span className="text-xs">
-                  {index === 0 ? "0" : 
-                   index === getColorScheme(palette).length - 1 ? "High" : 
-                   ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ColorLegend palette={palette} />
       </CardContent>
     </Card>
   );
