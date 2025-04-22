@@ -1,37 +1,37 @@
-
 import { ChartFilters, HeatmapData, MessageData, GroupByType } from '@/types';
 import { format, eachDayOfInterval, addDays } from 'date-fns';
-
-// This is a mock API service. In a real application, this would make actual API calls.
-// Instead, we're generating random data based on the filters.
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const AGENTS = ['Agent 1', 'Agent 2', 'Agent 3', 'Agent 4', 'Agent 5', 'Agent 6', 'Agent 7'];
 
-// Simulates an API call with a delay
 export const fetchMessageData = async (filters: ChartFilters): Promise<HeatmapData> => {
-  // Add a small delay to simulate network request
   await new Promise(resolve => setTimeout(resolve, 600));
   
   const { startDate, endDate, groupBy, agentList } = filters;
-  
-  // Generate data based on filters
   const data = generateMockData(startDate, endDate, groupBy, agentList || AGENTS);
   
-  // Calculate totals for each agent
-  const totals: Record<string, number> = {};
+  // Calculate totals by agent and time label
+  const totals = {
+    byAgent: {},
+    byTimeLabel: {}
+  };
   
   data.forEach(item => {
-    if (!totals[item.agent]) {
-      totals[item.agent] = 0;
+    // Agent totals
+    if (!totals.byAgent[item.agent]) {
+      totals.byAgent[item.agent] = 0;
     }
-    totals[item.agent] += item.count;
+    totals.byAgent[item.agent] += item.count;
+    
+    // Time label totals
+    const timeLabel = groupBy === 'weekday' ? item.day! : item.date;
+    if (!totals.byTimeLabel[timeLabel]) {
+      totals.byTimeLabel[timeLabel] = 0;
+    }
+    totals.byTimeLabel[timeLabel] += item.count;
   });
   
-  // Generate time labels based on the groupBy parameter
   const timeLabels = getTimeLabels(startDate, endDate, groupBy);
-  
-  // Filter agents based on agentList or use all agents
   const agents = agentList.length > 0 ? agentList : AGENTS;
   
   return {
@@ -40,6 +40,12 @@ export const fetchMessageData = async (filters: ChartFilters): Promise<HeatmapDa
     data,
     totals
   };
+};
+
+// Helper to get all available agents
+export const fetchAvailableAgents = async (): Promise<string[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300));
+  return AGENTS;
 };
 
 // Generate mock message data
@@ -102,10 +108,4 @@ const getTimeLabels = (startDate: Date, endDate: Date, groupBy: GroupByType): st
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     return days.map(day => format(day, 'yyyy-MM-dd'));
   }
-};
-
-// Helper to get all available agents (in a real app, this would be an API call)
-export const fetchAvailableAgents = async (): Promise<string[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return AGENTS;
 };

@@ -1,22 +1,30 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { LayoutGrid, LayoutList } from 'lucide-react';
-import { GroupByType } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LayoutGrid, LayoutList, SortAscending, SortDescending } from 'lucide-react';
+import { GroupByType, ColorPalette } from '@/types';
 
 interface ViewToggleProps {
   groupBy: GroupByType;
   onChange: (value: GroupByType) => void;
   sortBy: 'name' | 'total';
   onSortChange: (value: 'name' | 'total') => void;
+  palette: ColorPalette;
+  onPaletteChange: (value: ColorPalette) => void;
+  sortOrder: 'asc' | 'desc';
+  onSortOrderChange: (value: 'asc' | 'desc') => void;
 }
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ 
   groupBy, 
   onChange, 
   sortBy, 
-  onSortChange 
+  onSortChange,
+  palette,
+  onPaletteChange,
+  sortOrder,
+  onSortOrderChange
 }) => {
   return (
     <div className="flex flex-wrap gap-4 items-center">
@@ -44,6 +52,31 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
             Total
           </ToggleGroupItem>
         </ToggleGroup>
+        <button 
+          onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
+          className="p-2 hover:bg-muted rounded-md"
+        >
+          {sortOrder === 'asc' ? (
+            <SortAscending className="h-4 w-4" />
+          ) : (
+            <SortDescending className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Color:</span>
+        <Select value={palette} onValueChange={(value) => onPaletteChange(value as ColorPalette)}>
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="purple">Purple</SelectItem>
+            <SelectItem value="blue">Blue</SelectItem>
+            <SelectItem value="red">Red</SelectItem>
+            <SelectItem value="green">Green</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
