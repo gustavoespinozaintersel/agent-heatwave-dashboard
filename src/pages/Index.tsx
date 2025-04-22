@@ -4,7 +4,7 @@ import { startOfMonth, endOfMonth, subDays } from 'date-fns';
 import FilterPanel from '@/components/FilterPanel';
 import HeatmapChart from '@/components/HeatmapChart';
 import { fetchMessageData, fetchAvailableAgents } from '@/api/messageData';
-import { ChartFilters, HeatmapData, GroupByType } from '@/types';
+import { ChartFilters, HeatmapData, GroupByType, ColorPalette } from '@/types';
 
 const Index = () => {
   // Default date range is last 30 days
@@ -17,6 +17,12 @@ const Index = () => {
   
   // Default sort is by name
   const [sortBy, setSortBy] = useState<'name' | 'total'>('name');
+  
+  // Default sort order
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Default color palette
+  const [palette, setPalette] = useState<ColorPalette>('purple');
   
   // State for agents
   const [agents, setAgents] = useState<string[]>([]);
@@ -33,7 +39,9 @@ const Index = () => {
     groupBy,
     agentList,
     sortBy,
-  }), [startDate, endDate, groupBy, agentList, sortBy]);
+    palette,
+    sortOrder,
+  }), [startDate, endDate, groupBy, agentList, sortBy, palette, sortOrder]);
   
   // Fetch agents on component mount
   useEffect(() => {
@@ -56,7 +64,9 @@ const Index = () => {
         // Sort agents if needed
         if (sortBy === 'total' && result) {
           const sortedAgents = [...result.agents].sort((a, b) => {
-            return (result.totals[b] || 0) - (result.totals[a] || 0);
+            const aTotal = result.totals.byAgent[a] || 0;
+            const bTotal = result.totals.byAgent[b] || 0;
+            return sortOrder === 'asc' ? aTotal - bTotal : bTotal - aTotal;
           });
           
           result.agents = sortedAgents;
@@ -91,6 +101,16 @@ const Index = () => {
     setSortBy(value);
   };
   
+  // Handle sort order change
+  const handleSortOrderChange = (value: 'asc' | 'desc') => {
+    setSortOrder(value);
+  };
+  
+  // Handle palette change
+  const handlePaletteChange = (value: ColorPalette) => {
+    setPalette(value);
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-8 px-4">
@@ -110,14 +130,27 @@ const Index = () => {
             onGroupByChange={handleGroupByChange}
             sortBy={sortBy}
             onSortChange={handleSortChange}
+            palette={palette}
+            onPaletteChange={handlePaletteChange}
+            sortOrder={sortOrder}
+            onSortOrderChange={handleSortOrderChange}
           />
           
           {/* If we have data or are loading, show the heatmap */}
           {(data || loading) && (
             <HeatmapChart 
-              data={data || { agents: [], timeLabels: [], data: [], totals: {} }}
+              data={data || { 
+                agents: [], 
+                timeLabels: [], 
+                data: [], 
+                totals: { 
+                  byAgent: {}, 
+                  byTimeLabel: {} 
+                } 
+              }}
               loading={loading}
               groupBy={groupBy}
+              palette={palette}
             />
           )}
           
